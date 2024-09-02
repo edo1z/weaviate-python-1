@@ -63,6 +63,20 @@ try:
     else:
         print("Collection already contains data. No new data inserted.")
 
+    # ベクトル検索の実行
+    search_query = "biology"
+    response = questions.query.near_text(
+        query=search_query,
+        limit=2
+    )
+
+    print(f"\nSearch results for '{search_query}':")
+    for obj in response.objects:
+        print(f"Question: {obj.properties['question']}")
+        print(f"Answer: {obj.properties['answer']}")
+        print(f"Category: {obj.properties['category']}")
+        print("---")
+
 except Exception as e:
     print(f"An error occurred: {e}")
 
