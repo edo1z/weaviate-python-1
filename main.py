@@ -70,11 +70,25 @@ try:
         limit=2
     )
 
-    print(f"\nSearch results for '{search_query}':")
+    print(f"\nVector Search results for '{search_query}':")
     for obj in response.objects:
         print(f"Question: {obj.properties['question']}")
         print(f"Answer: {obj.properties['answer']}")
         print(f"Category: {obj.properties['category']}")
+        print("---")
+
+    # RAGの実装
+    rag_response = questions.generate.near_text(
+        query=search_query,
+        limit=2,
+        single_prompt="Explain the answer to the following question as you might to a five-year-old: {question}\nAnswer: {answer}"
+    )
+
+    print(f"\nRAG results for '{search_query}':")
+    for obj in rag_response.objects:
+        print(f"Question: {obj.properties['question']}")
+        print(f"Original Answer: {obj.properties['answer']}")
+        print(f"Generated Explanation: {obj.generated}")
         print("---")
 
 except Exception as e:
