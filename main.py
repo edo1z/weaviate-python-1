@@ -23,6 +23,11 @@ client = weaviate.connect_to_weaviate_cloud(
 )
 
 try:
+    questions = client.collections.create(
+        name="Question",
+        vectorizer_config=wvc.config.Configure.Vectorizer.text2vec_openai(),  # If set to "none" you must always provide vectors yourself. Could be any other "text2vec-*" also.
+        generative_config=wvc.config.Configure.Generative.openai()  # Ensure the `generative-openai` module is used for generative queries
+    )
     pass  # Replace with your code. Close client gracefully in the finally block.
 
 finally:
