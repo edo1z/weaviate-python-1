@@ -1,9 +1,11 @@
 from dotenv import load_dotenv
 import weaviate
 import weaviate.classes as wvc
+from weaviate.classes.query import MetadataQuery
 import os
 import requests
 import json
+from tqdm import tqdm
 
 load_dotenv()
 
@@ -23,12 +25,46 @@ client = weaviate.connect_to_weaviate_cloud(
 )
 
 try:
-    questions = client.collections.create(
-        name="Question",
-        vectorizer_config=wvc.config.Configure.Vectorizer.text2vec_openai(),  # If set to "none" you must always provide vectors yourself. Could be any other "text2vec-*" also.
-        generative_config=wvc.config.Configure.Generative.openai()  # Ensure the `generative-openai` module is used for generative queries
-    )
-    pass  # Replace with your code. Close client gracefully in the finally block.
+    # コレクションが既に存在するかチェック
+    try:
+        questions = client.collections.get("Question")
+        print("Collection 'Question' already exists.")
+    except weaviate.exceptions.UnexpectedStatusCodeException:
+        questions = client.collections.create(
+            name="Question",
+            vectorizer_config=wvc.config.Configure.Vectorizer.text2vec_openai(),
+            generative_config=wvc.config.Configure.Generative.openai(),
+        )
+        print("Collection 'Question' created successfully.")
+
+    # コレクションにデータがあるかチェック
+    response = questions.query.fetch_objects(limit=1)
+
+    if len(response.objects) == 0:
+        # データの取得と登録
+        resp = requests.get(
+            "https://raw.githubusercontent.com/weaviate-tutorials/quickstart/main/data/jeopardy_tiny.json"
+        )
+        data = json.loads(resp.text)  # Load data
+
+        question_objects = [
+            {
+                "answer": d["Answer"],
+                "question": d["Question"],
+                "category": d["Category"],
+            }
+            for d in data
+        ]
+
+        questions.data.insert_many(question_objects)
+        print(
+            f"Data insertion completed. {len(question_objects)} questions added to the collection."
+        )
+    else:
+        print("Collection already contains data. No new data inserted.")
+
+except Exception as e:
+    print(f"An error occurred: {e}")
 
 finally:
     client.close()  # Close client gracefully
